@@ -1,76 +1,103 @@
 package vallegrade.edu.pe.view;
-import vallegrade.edu.pe.controller.TaskController;
-import vallegrade.edu.pe.model.TaskEntity;
 
+import vallegrade.edu.pe.controller.TaskController;
+import vallegrade.edu.pe.model.Task;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-
-
-
 public class TaskView extends JFrame {
-    private JTable tabla;
-    private DefaultTableModel modelo;
-    private TaskController controller = new TaskController();
-
+    private JTable table;
+    private TaskController controller;
 
     public TaskView() {
-        setTitle("Gestor de Tareas");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        controller = new TaskController();
+        setTitle("Lista de Tareas");
         setSize(600, 400);
         setLocationRelativeTo(null);
-
-
-        modelo = new DefaultTableModel(new String[]{"ID", "Título", "Descripción", "Estado"}, 0);
-        tabla = new JTable(modelo);
-        JScrollPane scroll = new JScrollPane(tabla);
-
-
-        JButton btnEditar = new JButton("Editar tarea seleccionada");
-        btnEditar.addActionListener(e -> editarTarea());
-
-
-        add(scroll, BorderLayout.CENTER);
-        add(btnEditar, BorderLayout.SOUTH);
-
-
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        initComponents();
         cargarDatos();
-        setVisible(true);
     }
 
+    private void initComponents() {
+        table = new JTable();
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane, BorderLayout.CENTER);
 
-    private void cargarDatos() {
-        modelo.setRowCount(0);
-        List<TaskEntity> lista = controller.listar();
-        for (TaskEntity t : lista) {
-            modelo.addRow(new Object[]{t.getId(), t.getTitulo(), t.getDescripcion(), t.getEstado()});
-        }
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+
+        // Botones
+        JButton btnCrear = new JButton("Crear");
+        JButton btnActualizar = new JButton("Actualizar");
+        JButton btnEliminar = new JButton("Eliminar");
+
+        panel.add(btnCrear);
+        panel.add(btnActualizar);
+        panel.add(btnEliminar);
+
+        add(panel, BorderLayout.SOUTH);
+
+        btnCrear.addActionListener(e -> crearTarea());
+        btnActualizar.addActionListener(e -> actualizarTarea());
+        btnEliminar.addActionListener(e -> eliminarTarea());
     }
 
+    public void cargarDatos() {
+        String[] columnas = {"ID", "Título", "Descripción", "Estado"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+        List<Task> tareas = controller.listarTareas();
 
-    private void editarTarea() {
-        int fila = tabla.getSelectedRow();
-        if (fila != -1) {
-            int id = (int) modelo.getValueAt(fila, 0);
-            String titulo = JOptionPane.showInputDialog("Nuevo título:", modelo.getValueAt(fila, 1));
-            String descripcion = JOptionPane.showInputDialog("Nueva descripción:", modelo.getValueAt(fila, 2));
-            String estado = JOptionPane.showInputDialog("Nuevo estado:", modelo.getValueAt(fila, 3));
-
-
-            TaskEntity tarea = new TaskEntity();
-            tarea.setId(id);
-            tarea.setTitulo(titulo);
-            tarea.setDescripcion(descripcion);
-            tarea.setEstado(estado);
-
-
-            controller.actualizar(tarea);
-            cargarDatos();
-        } else {
-            JOptionPane.showMessageDialog(this, "Selecciona una tarea para editar.");
+        for (Task tarea : tareas) {
+            Object[] fila = {tarea.getId(), tarea.getTitulo(), tarea.getDescripcion(), tarea.getEstado()};
+            modelo.addRow(fila);
         }
+
+        table.setModel(modelo);
+    }
+
+    private void crearTarea() {
+        String titulo = JOptionPane.showInputDialog(this, "Título:");
+        String descripcion = JOptionPane.showInputDialog(this, "Descripción:");
+        String estado = JOptionPane.showInputDialog(this, "Estado:");
+
+        Task tarea = new Task();
+        tarea.setTitulo(titulo);
+        tarea.setDescripcion(descripcion);
+        tarea.setEstado(estado);
+
+        controller.crearTarea(tarea);
+        cargarDatos();
+    }
+
+    private void actualizarTarea() {
+        int id = Integer.parseInt(JOptionPane.showInputDialog(this, "ID de la tarea a actualizar:"));
+        String titulo = JOptionPane.showInputDialog(this, "Nuevo título:");
+        String descripcion = JOptionPane.showInputDialog(this, "Nueva descripción:");
+        String estado = JOptionPane.showInputDialog(this, "Nuevo estado:");
+
+        Task tarea = new Task();
+        tarea.setId(id);
+        tarea.setTitulo(titulo);
+        tarea.setDescripcion(descripcion);
+        tarea.setEstado(estado);
+
+        controller.actualizarTarea(tarea);
+        cargarDatos();
+    }
+
+    private void eliminarTarea() {
+        int id = Integer.parseInt(JOptionPane.showInputDialog(this, "ID de la tarea a eliminar:"));
+        controller.eliminarTarea(id);
+        cargarDatos();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new TaskView().setVisible(true);
+        });
     }
 }
